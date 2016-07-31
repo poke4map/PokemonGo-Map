@@ -182,6 +182,9 @@ def search_thread(q):
 #
 def search_loop(args):
     i = 0
+    args.cv.acquire()
+    args.cv.wait()
+    args.cv.release()
     while True:
         log.info("Search loop {} starting".format(i))
         try:
@@ -191,9 +194,10 @@ def search_loop(args):
         except Exception as e:
             log.error('Scanning error @ {0.__class__.__name__}: {0}'.format(e))
         finally:
-            if args.thread_delay > 0:
-                log.info('Waiting {:g} seconds before beginning new scan.'.format(args.thread_delay))
-                time.sleep(args.thread_delay)
+            log.info('Waiting for client request before rescanning')
+            args.cv.acquire()
+            args.cv.wait()
+            args.cv.release()
 
 
 #

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{lang}}">
   <head>
     <meta charset="utf-8">
@@ -55,6 +55,10 @@
 	    <span class="switch-handle"></span>
 	    </label>
 	  </div>
+      <div class="form-control switch-container" style="display:{{is_fixed}}">
+        <button id="refresh_button" onclick=rescan()>Refresh</button>
+        <p><span id="refresh-result"></span></p>
+      </div>
 	</div>
 
 	<hr width="100%">

@@ -28,6 +28,10 @@ class Pogom(Flask):
         self.route("/loc", methods=['GET'])(self.loc)
         self.route("/next_loc", methods=['POST'])(self.next_loc)
         self.route("/mobile", methods=['GET'])(self.list_pokemon)
+        self.route("/rescan", methods=['GET'])(self.rescan)
+    
+    def set_cv(self, cv):
+        self.cv = cv
 
     def fullmap(self):
         args = get_args()
@@ -135,6 +139,12 @@ class Pogom(Flask):
                                pokemon_list=pokemon_list,
                                origin_lat=lat,
                                origin_lng=lon)
+
+    def rescan(self):
+        self.cv.acquire()
+        self.cv.notify()
+        self.cv.release()
+        return 'request received by server'
 
 
 class CustomJSONEncoder(JSONEncoder):

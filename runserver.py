@@ -6,7 +6,7 @@ import sys
 import logging
 import time
 
-from threading import Thread
+from threading import Thread, Condition
 from flask_cors import CORS
 
 from pogom import config
@@ -19,6 +19,8 @@ from pogom.pgoapi.utilities import get_pos_by_name
 
 logging.basicConfig(format='%(asctime)s [%(module)14s] [%(levelname)7s] %(message)s')
 log = logging.getLogger()
+
+rescan_condition = Condition()
 
 if __name__ == '__main__':
     args = get_args()
@@ -66,6 +68,8 @@ if __name__ == '__main__':
     config['ORIGINAL_LONGITUDE'] = position[1]
     config['LOCALE'] = args.locale
     config['CHINA'] = args.china
+    
+    args.cv = rescan_condition
 
     if not args.only_server:
         # Gather the pokemons!
@@ -83,6 +87,8 @@ if __name__ == '__main__':
         search_thread.start()
 
     app = Pogom(__name__)
+    
+    app.set_cv(rescan_condition)
 
     if args.cors:
         CORS(app);
