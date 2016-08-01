@@ -141,6 +141,7 @@ class Pogom(Flask):
                                origin_lng=lon)
 
     def rescan(self):
+        log.info("rescan received")
         self.cv.acquire()
         self.cv.notify()
         self.cv.release()

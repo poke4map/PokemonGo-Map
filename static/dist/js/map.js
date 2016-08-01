@@ -1245,3 +1245,18 @@ $(function() {
       Store.set('geoLocate', this.checked);
   });
 });
+
+
+
+function rescan() {
+    var xhttp = new XMLHttpRequest();
+    xhttp.open("GET", "/rescan", true);
+    xhttp.send();
+    document.getElementById("refresh-result").innerHTML = 'Request sent to the server'
+    xhttp.onreadystatechange = function () {
+        if (xhttp.readyState == 4 && xhttp.status == 200) {
+            document.getElementById("refresh-result").innerHTML = xhttp.responseText;
+        }
+    };
+
+}
