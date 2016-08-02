@@ -90,6 +90,7 @@ if __name__ == '__main__':
     app = Pogom(__name__)
     
     app.set_cv(rescan_condition)
+    app.set_authentication(args.username, args.password)
 
     if args.cors:
         CORS(app);

@@ -4,12 +4,13 @@
 import calendar
 import logging
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, Response
 from flask.json import JSONEncoder
 from flask_compress import Compress
 from datetime import datetime
 from s2sphere import *
 from pogom.utils import get_args
+from functools import wraps
 
 from . import config
 from .models import Pokemon, Gym, Pokestop, ScannedLocation
@@ -17,6 +18,22 @@ from .models import Pokemon, Gym, Pokestop, ScannedLocation
 log = logging.getLogger(__name__)
 compress = Compress()
 
+
+def authenticate():
+    """Sends a 401 response that enables basic auth"""
+    return Response(
+    'Could not verify your access level for that URL.\n'
+    'You have to login with proper credentials', 401,
+    {'WWW-Authenticate': 'Basic realm="Login Required"'})
+
+def requires_auth(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            auth = request.authorization
+            if not auth or not args[0].check_auth(auth.username, auth.password):
+                return authenticate()
+            return f(*args, **kwargs)
+        return decorated
 
 class Pogom(Flask):
     def __init__(self, import_name, **kwargs):
@@ -32,15 +49,26 @@ class Pogom(Flask):
         self.route("/rescan", methods=['GET'])(self.rescan)
         self.route("/set_step_range", methods=['POST'])(self.set_step_range)
     
+
     def set_cv(self, cv):
         self.cv = cv
+    
+    def set_authentication(self, username, password):
+      self.username = username
+      self.password = password
 
+    def check_auth(self, username, password):
+        """This function is called to check if a username /
+        password combination is valid.
+        """
+        return username == self.username and password == self.password
+
+    @requires_auth
     def fullmap(self):
         args = get_args()
         display = "inline"
         if args.fixed_location:
             display = "none"
-
         return render_template('map.html',
                                lat=config['ORIGINAL_LATITUDE'],
                                lng=config['ORIGINAL_LONGITUDE'],
@@ -48,7 +76,7 @@ class Pogom(Flask):
                                lang=config['LOCALE'],
                                is_fixed=display
                                )
-
+    @requires_auth
     def raw_data(self):
         d = {}
         swLat = request.args.get('swLat')
@@ -74,7 +102,8 @@ class Pogom(Flask):
                                                       neLng)
 
         return jsonify(d)
-
+    
+    @requires_auth
     def loc(self):
         d = {}
         d['lat'] = config['ORIGINAL_LATITUDE']
@@ -82,6 +111,7 @@ class Pogom(Flask):
 
         return jsonify(d)
 
+    @requires_auth
     def next_loc(self):
         args = get_args()
         if args.fixed_location:
@@ -103,12 +133,14 @@ class Pogom(Flask):
             log.info('Changing next location: %s,%s' % (lat, lon))
             return 'ok'
 
+    @requires_auth
     def step_range(self):
         if 'NEXT_STEP_RANGE' in config:
           return str(config['NEXT_STEP_RANGE'])
         else:
           return str(config['STEP_RANGE'])
-
+    
+    @requires_auth
     def set_step_range(self):
         args = get_args()
         if request.args:
@@ -123,6 +155,7 @@ class Pogom(Flask):
           log.info('Changing the step range: %d' % stepRange)
           return 'ok'
 
+    @requires_auth
     def list_pokemon(self):
         # todo: check if client is android/iOS/Desktop for geolink, currently
         # only supports android
@@ -162,6 +195,7 @@ class Pogom(Flask):
                                origin_lat=lat,
                                origin_lng=lon)
 
+    @requires_auth
     def rescan(self):
         log.info("rescan received")
         self.cv.acquire()
