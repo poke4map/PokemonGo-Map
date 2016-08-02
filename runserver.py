@@ -66,6 +66,7 @@ if __name__ == '__main__':
 
     config['ORIGINAL_LATITUDE'] = position[0]
     config['ORIGINAL_LONGITUDE'] = position[1]
+    config['STEP_RANGE'] = args.step_limit
     config['LOCALE'] = args.locale
     config['CHINA'] = args.china
     

@@ -307,6 +307,28 @@ function createSearchMarker() {
   });
 
   var oldLocation = null;
+
+  marker.infoWindow = new google.maps.InfoWindow({
+      content: locationMarkerInfo(),
+      disableAutoPan: true
+  });
+
+  marker.addListener('click', function() {
+      if (marker.persist == null) {
+          marker.infoWindow.open(map, marker);
+          clearSelection();
+          updateLabelDiffTime();
+          marker.persist = true;
+      } else {
+          marker.infoWindow.close(map, marker);
+          marker.persist = null;
+      }
+  });
+
+  google.maps.event.addListener(marker.infoWindow, 'closeclick', function() {
+      marker.persist = null;
+  });
+
   google.maps.event.addListener(marker, 'dragstart', function() {
     oldLocation = marker.getPosition();
   });
@@ -323,11 +345,11 @@ function createSearchMarker() {
         }
       });
   });
-
   return marker;
 }
 
 function initSidebar() {
+  getStepRange();
   $('#gyms-switch').prop('checked', Store.get('showGyms'));
   $('#pokemon-switch').prop('checked', Store.get('showPokemon'));
   $('#pokestops-switch').prop('checked', Store.get('showPokestops'));
@@ -361,6 +383,15 @@ function initSidebar() {
 
 function pad(number) {
   return number <= 99 ? ("0" + number).slice(-2) : number;
+}
+
+function locationMarkerInfo() {
+    var contentstring=`
+      <div>
+        <button onclick=rescan("marker-refresh-result")>Rescan</button>
+        <div id="marker-refresh-result">Click to send request.<div>
+      </div>`;
+    return contentstring;
 }
 
 function pokemonLabel(name, disappear_time, id, latitude, longitude, encounter_id) {
@@ -1074,6 +1105,25 @@ function changeSearchLocation(lat, lng) {
   return $.post("next_loc?lat=" + lat + "&lon=" + lng, {});
 }
 
+function changeStepRange() {
+    var stepRange = document.getElementById("step-range").value;
+    document.getElementById("step-range-display").innerHTML = stepRange;
+    return $.post("set_step_range?step=" + stepRange, {});
+}
+
+function getStepRange() {
+    var xhttp = new XMLHttpRequest();
+    xhttp.open("GET", "/step_range", true);
+    xhttp.send();
+    xhttp.onreadystatechange = function () {
+        if (xhttp.readyState == 4 && xhttp.status == 200) {
+            var currentStepRange = xhttp.responseText;
+            document.getElementById("step-range").value = currentStepRange;
+            document.getElementById("step-range-display").innerHTML = currentStepRange;
+        }
+    };
+}
+
 function centerMap(lat, lng, zoom) {
   var loc = new google.maps.LatLng(lat, lng);
 
@@ -1248,14 +1298,14 @@ $(function() {
 
 
 
-function rescan() {
+function rescan(output_location) {
     var xhttp = new XMLHttpRequest();
     xhttp.open("GET", "/rescan", true);
     xhttp.send();
-    document.getElementById("refresh-result").innerHTML = 'Request sent to the server'
+    document.getElementById(output_location).innerHTML = 'Request sent to the server'
     xhttp.onreadystatechange = function () {
         if (xhttp.readyState == 4 && xhttp.status == 200) {
-            document.getElementById("refresh-result").innerHTML = xhttp.responseText;
+            document.getElementById(output_location).innerHTML = xhttp.responseText;
         }
     };
 

@@ -27,8 +27,10 @@ class Pogom(Flask):
         self.route("/raw_data", methods=['GET'])(self.raw_data)
         self.route("/loc", methods=['GET'])(self.loc)
         self.route("/next_loc", methods=['POST'])(self.next_loc)
+        self.route("/step_range", methods=['GET'])(self.step_range)
         self.route("/mobile", methods=['GET'])(self.list_pokemon)
         self.route("/rescan", methods=['GET'])(self.rescan)
+        self.route("/set_step_range", methods=['POST'])(self.set_step_range)
     
     def set_cv(self, cv):
         self.cv = cv
@@ -100,6 +102,26 @@ class Pogom(Flask):
             config['NEXT_LOCATION'] = {'lat': lat, 'lon': lon}
             log.info('Changing next location: %s,%s' % (lat, lon))
             return 'ok'
+
+    def step_range(self):
+        if 'NEXT_STEP_RANGE' in config:
+          return str(config['NEXT_STEP_RANGE'])
+        else:
+          return str(config['STEP_RANGE'])
+
+    def set_step_range(self):
+        args = get_args()
+        if request.args:
+          stepRange = request.args.get('step', type=int)
+        if request.form:
+          stepRange = request.args.get('step', type=int)
+        if (not stepRange) or (stepRange < 1) or (stepRange > 5):
+            log.warning('Invalid step range: %d' %stepRange)
+            return 'bad parameters', 400
+        else:
+          config['NEXT_STEP_RANGE'] = stepRange
+          log.info('Changing the step range: %d' % stepRange)
+          return 'ok'
 
     def list_pokemon(self):
         # todo: check if client is android/iOS/Desktop for geolink, currently

@@ -204,7 +204,11 @@ def search_loop(args):
 # Overseer main logic
 #
 def search(args, i):
-    num_steps = args.step_limit
+    #num_steps = args.step_limit
+    if 'NEXT_STEP_RANGE' in config:
+        config['STEP_RANGE'] = config['NEXT_STEP_RANGE']
+        config.pop('NEXT_STEP_RANGE', None)
+    num_steps = config['STEP_RANGE']
 
     # Update the location if needed
     if 'NEXT_LOCATION' in config:
